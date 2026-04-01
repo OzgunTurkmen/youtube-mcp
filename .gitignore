@@ -4,3 +4,6 @@ dist/
 .DS_Store
 bundle.txt
 bundle2.txt
+
+.vercel
+.env*.local

@@ -10,8 +10,6 @@
 import "dotenv/config";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import express from "express";
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -207,40 +205,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// ─── Express App Configuration (For Vercel / SSE) ────────────────
-
-export const app = express();
-let transport: SSEServerTransport;
-
-app.get("/sse", async (req, res) => {
-  transport = new SSEServerTransport("/message", res);
-  await server.connect(transport);
-});
-
-app.post("/message", async (req, res) => {
-  if (transport) {
-    await transport.handlePostMessage(req, res);
-  } else {
-    res.status(503).send("SSE connection not established");
-  }
-});
-
-app.get("/", (req, res) => {
-  res.send("YouTube MCP Server is running. Endpoint: /sse");
-});
-
 // ─── Start Server ────────────────────────────────────────────────
 
-const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV !== undefined;
-
-if (!isVercel) {
-  // Local CLI Mode
+async function main() {
   console.error("🖥️ Starting YouTube MCP Server in local mode (stdio transport)");
-  const stdioTransport = new StdioServerTransport();
-  server.connect(stdioTransport).catch((error) => {
-    console.error("❌ Server start error:", error);
-    process.exit(1);
-  });
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
 }
 
-export default app;
+main().catch((error) => {
+  console.error("❌ Server start error:", error);
+  process.exit(1);
+});
