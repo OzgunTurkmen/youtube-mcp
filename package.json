@@ -1,0 +1,25 @@
+{
+  "name": "youtube-mcp",
+  "version": "1.0.0",
+  "description": "YouTube MCP Server — Extract transcripts, metadata, comments, and channel info from YouTube videos via Model Context Protocol",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "youtube-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.4",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "typescript": "^5.8.3",
+    "tsx": "^4.19.4"
+  }
+}
