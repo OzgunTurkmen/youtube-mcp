@@ -207,47 +207,40 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
+// ─── Express App Configuration (For Vercel / SSE) ────────────────
+
+export const app = express();
+let transport: SSEServerTransport;
+
+app.get("/sse", async (req, res) => {
+  transport = new SSEServerTransport("/message", res);
+  await server.connect(transport);
+});
+
+app.post("/message", async (req, res) => {
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  } else {
+    res.status(503).send("SSE connection not established");
+  }
+});
+
+app.get("/", (req, res) => {
+  res.send("YouTube MCP Server is running. Endpoint: /sse");
+});
+
 // ─── Start Server ────────────────────────────────────────────────
 
-async function main() {
-  const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV !== undefined || process.env.PORT;
+const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV !== undefined;
 
-  if (isVercel) {
-    console.error("🌐 Starting YouTube MCP Server in Web/SSE mode (Vercel detected)");
-    const app = express();
-    const port = process.env.PORT || 3000;
-
-    let transport: SSEServerTransport;
-
-    app.get("/sse", async (req, res) => {
-      transport = new SSEServerTransport("/message", res);
-      await server.connect(transport);
-    });
-
-    app.post("/message", async (req, res) => {
-      if (transport) {
-        await transport.handlePostMessage(req, res);
-      } else {
-        res.status(503).send("SSE connection not established");
-      }
-    });
-
-    app.get("/", (req, res) => {
-      res.send("YouTube MCP Server is running. Endpoint: /sse");
-    });
-
-    app.listen(port, () => {
-      console.error(`✅ Server listening on port ${port}`);
-    });
-  } else {
-    // Local CLI Mode
-    console.error("🖥️ Starting YouTube MCP Server in local mode (stdio transport)");
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-  }
+if (!isVercel) {
+  // Local CLI Mode
+  console.error("🖥️ Starting YouTube MCP Server in local mode (stdio transport)");
+  const stdioTransport = new StdioServerTransport();
+  server.connect(stdioTransport).catch((error) => {
+    console.error("❌ Server start error:", error);
+    process.exit(1);
+  });
 }
 
-main().catch((error) => {
-  console.error("❌ Server start error:", error);
-  process.exit(1);
-});
+export default app;
